@@ -61,9 +61,13 @@ Model modelTrain;
 Model modelDesk;
 Model modelCPU;
 Model chair;
+Model tree;
+Model leaves;
+Model busto;
+Model pedestal;
 
 GLuint textureID1, textureCespedID, textureWaterID, pared_q, puerta_principal, ventana1, ventana2,
- ventana3, piedra, ventanaLab, windowsImg, keyboard, pizarron;
+ ventana3, piedra, ventanaLab, windowsImg, keyboard, pizarron, tronco, hojas, bronce;
 GLuint cubeTextureID;
 
 std::vector<std::vector<glm::mat4>> getKeyFrames(std::string fileName) {
@@ -247,6 +251,10 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	modelDesk.loadModel("../../models/desk.3ds");
 	modelCPU.loadModel("../../models/cpu/monitor_win10.fbx");
 	chair.loadModel("../../models/willisau_modica_armchair_cantilever_3ds/willisau_modica_armchair_cantilever_mat(1)_3ds.3ds");
+	tree.loadModel("../../models/TreeSet3/TreeSet3.fbx");
+	leaves.loadModel("../../models/TreeSet3/Leaves3.fbx");
+	busto.loadModel("../../models/NelsonMandela/16097_NelsonMandela_V3.obj");
+	pedestal.loadModel("../../models/pedestal/10421_square_pedastal_iterations-2.obj");
 
 	camera->setPosition(glm::vec3(0.0f, 17.0f, 30.0f));
 	camera->setYawPitch(-89.0f, -25.0f);
@@ -460,6 +468,66 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	data = texture.convertToData(bitmap, imageWidth, imageHeight);
 	glGenTextures(1, &textureWaterID);
 	glBindTexture(GL_TEXTURE_2D, textureWaterID);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	texture.freeImage(bitmap);
+
+	//Tronco
+	texture = Texture("../../Textures/BarkDecidious0194_7_S.jpg");
+	bitmap = texture.loadImage(false);
+	data = texture.convertToData(bitmap, imageWidth, imageHeight);
+	glGenTextures(1, &tronco);
+	glBindTexture(GL_TEXTURE_2D, tronco);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	texture.freeImage(bitmap);
+
+	//Hojas
+	texture = Texture("../../Textures/Leaves0017_1_S.png");
+	bitmap = texture.loadImage(false);
+	data = texture.convertToData(bitmap, imageWidth, imageHeight);
+	glGenTextures(1, &hojas);
+	glBindTexture(GL_TEXTURE_2D, hojas);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	texture.freeImage(bitmap);
+
+	// Bronce
+		texture = Texture("../../Textures/bronce.jpg");
+	bitmap = texture.loadImage(false);
+	data = texture.convertToData(bitmap, imageWidth, imageHeight);
+	glGenTextures(1, &bronce);
+	glBindTexture(GL_TEXTURE_2D, bronce);
 	// set the texture wrapping parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -1576,6 +1644,53 @@ void renderizarEdificio(glm::mat4 view, glm::mat4 projection) {
 
 }
 
+void renderizarExterior(glm::mat4 view, glm::mat4 projection) {
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, tronco);
+	
+	tree.setShader(&shaderLighting);
+	tree.setProjectionMatrix(projection);
+	tree.setViewMatrix(view);
+	tree.setScale(glm::vec3(0.6f, 0.6f, 0.6f));
+	tree.setOrientation(glm::vec3(-90, 0, 0));
+
+	tree.setPosition(glm::vec3(0.0, 0.0, 17.0));
+	tree.render();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, hojas);
+
+	leaves.setShader(&shaderLighting);
+	leaves.setProjectionMatrix(projection);
+	leaves.setViewMatrix(view);
+	leaves.setScale(glm::vec3(0.6f, 0.6f, 0.6f));
+	leaves.setOrientation(glm::vec3(-90, 0, 0));
+
+	leaves.setPosition(glm::vec3(0.0, 0.0, 17.0));
+	leaves.render();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, bronce);
+	busto.setShader(&shaderLighting);
+	busto.setProjectionMatrix(projection);
+	busto.setViewMatrix(view);
+	busto.setScale(glm::vec3(0.025f, 0.03f, 0.03f));
+	busto.setOrientation(glm::vec3(-90, -180, 0));
+
+	busto.setPosition(glm::vec3(-0.25, 1.15, 12.6));
+	busto.render();
+
+	glActiveTexture(GL_TEXTURE0);
+	pedestal.setShader(&shaderLighting);
+	pedestal.setProjectionMatrix(projection);
+	pedestal.setViewMatrix(view);
+	pedestal.setScale(glm::vec3(0.014f, 0.010f, 0.014f));
+	pedestal.setOrientation(glm::vec3(-90, 0, 0));
+
+	pedestal.setPosition(glm::vec3(0.0, 0.0, 13.0));
+	pedestal.render();
+}
+
 void applicationLoop() {
 	bool psi = true;
 	double lastTime = TimeManager::Instance().GetTime();
@@ -1844,6 +1959,7 @@ void applicationLoop() {
 
 		renderizarEdificio(view, projection);
 		renderizarSalon(view, projection);
+		renderizarExterior(view, projection);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureWaterID);
