@@ -40,6 +40,7 @@ Box boxWater;
 Box windowsBox;
 Box boxStone;
 Box windowsBanio;
+Box leaveBox;
 
 Sphere sphereAnimacion(20, 20);
 Cylinder cylinderAnimacion(20, 20, 0.5, 0.5);
@@ -154,7 +155,10 @@ double deltaTime;
 
 bool actionAnim = false, animFinished = true, cerrada = true;
 float zDoorSlide = -17.66;
-
+//Variables de animacion hoja
+float hojaX = 1.0, hojaY, hojaYaux = 14.0, hojaZ, angulo = 0.0f, zSuma;
+bool vuelta1 = true;
+bool vuelta2 = false;
 
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow* Window, int widthRes, int heightRes);
@@ -251,6 +255,8 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	windowsBanio.scaleUVS(glm::vec2(1.0, 1.0));
 	boxStone.init();
 	boxStone.scaleUVS(glm::vec2(1.0, 1.0));
+	leaveBox.init();
+	leaveBox.scaleUVS(glm::vec2(1.0, 1.0));
 
 	modelRock.loadModel("../../models/rock/rock.obj");
 	modelRail.loadModel("../../models/railroad/railroad_track.obj");
@@ -2101,6 +2107,77 @@ void animacionPuerta(glm::mat4 view, glm::mat4 projection) {
 	}
 }
 
+void animacionHoja(glm::mat4 view, glm::mat4 projection) {
+
+	glBindTexture(GL_TEXTURE_2D, hojas);
+	leaveBox.setShader(&shaderLighting);
+	leaveBox.setProjectionMatrix(projection);
+	leaveBox.setViewMatrix(view);
+	leaveBox.setScale(glm::vec3(0.2, 0.001f, 0.2f));
+
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, -angulo));
+	leaveBox.setPosition(glm::vec3(hojaX, 0.5 + hojaY, 14.0));
+	leaveBox.render();
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, angulo));
+	leaveBox.setPosition(glm::vec3(hojaX, hojaY, 14.0));
+	leaveBox.render();
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, -angulo));
+	leaveBox.setPosition(glm::vec3(-2.0 + hojaX, hojaY, 14.0));
+	leaveBox.render();
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, angulo));
+	leaveBox.setPosition(glm::vec3(2.0 + hojaX, hojaY, 14.0));
+	leaveBox.render();
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, -angulo));
+	leaveBox.setPosition(glm::vec3(hojaX, 0.5 + hojaY, 16.0));
+	leaveBox.render();
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, angulo));
+	leaveBox.setPosition(glm::vec3(hojaX, hojaY, 15.0));
+	leaveBox.render();
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, -angulo));
+	leaveBox.setPosition(glm::vec3(-3.0 + hojaX, hojaY, 16.0));
+	leaveBox.render();
+
+	leaveBox.setOrientation(glm::vec3(0.0, 0.0, angulo));
+	leaveBox.setPosition(glm::vec3(3.0 + hojaX, hojaY, 15.0));
+	leaveBox.render();
+
+	hojaX = 1.0*glm::sin(glm::radians(angulo));
+	hojaY = hojaYaux * glm::cos(glm::radians(angulo));
+	hojaYaux -= 0.01f;
+
+	if (hojaYaux <= 0.0f) {
+		hojaYaux = 10.0f;
+	}
+
+	if (vuelta1)
+	{
+		angulo -= 0.2f;
+		if (angulo < -30.0f)
+		{
+			vuelta1 = false;
+			vuelta2 = true;
+		}
+
+	}
+	if (vuelta2)
+	{
+		angulo += 0.2f;
+		if (angulo > 30.0f)
+		{
+			vuelta2 = false;
+			vuelta1 = true;
+		}
+
+	}
+}
+
 void applicationLoop() {
 	bool psi = true;
 	double lastTime = TimeManager::Instance().GetTime();
@@ -2371,6 +2448,7 @@ void applicationLoop() {
 		renderizarSalon(view, projection);
 		renderizarExterior(view, projection);
 		animacionPuerta(view, projection);
+		animacionHoja(view, projection);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureWaterID);
