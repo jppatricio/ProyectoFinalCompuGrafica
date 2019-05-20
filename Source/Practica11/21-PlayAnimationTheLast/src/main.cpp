@@ -68,10 +68,11 @@ Model tree;
 Model leaves;
 Model busto;
 Model pedestal;
+Model avion;
 void animacionProgramador(glm::mat4 view, glm::mat4 projection);
 
 GLuint textureID1, textureCespedID, textureWaterID, pared_q, puerta_principal, ventana1, ventana2,
- ventana3, piedra, ventanaLab, windowsImg, keyboard, pizarron, tronco, hojas, bronce, ventana4;
+ ventana3, piedra, ventanaLab, windowsImg, keyboard, pizarron, tronco, hojas, bronce, ventana4, papel;
 GLuint cubeTextureID;
 
 float interpolation = 0.0;
@@ -175,6 +176,8 @@ float zDoorSlide = -17.66;
 float hojaX = 1.0, hojaY, hojaYaux = 14.0, hojaZ, angulo = 0.0f, zSuma;
 bool vuelta1 = true;
 bool vuelta2 = false;
+//Variables de animacion avion
+float avionX, avionZ, ang = 0.0f;
 
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow* Window, int widthRes, int heightRes);
@@ -296,6 +299,7 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	leaves.loadModel("../../models/TreeSet3/Leaves3.fbx");
 	busto.loadModel("../../models/NelsonMandela/16097_NelsonMandela_V3.obj");
 	pedestal.loadModel("../../models/pedestal/10421_square_pedastal_iterations-2.obj");
+	avion.loadModel("../../models/Bomber.obj");
 
 	camera->setPosition(glm::vec3(0.0f, 17.0f, 30.0f));
 	camera->setYawPitch(-89.0f, -25.0f);
@@ -582,6 +586,26 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	data = texture.convertToData(bitmap, imageWidth, imageHeight);
 	glGenTextures(1, &bronce);
 	glBindTexture(GL_TEXTURE_2D, bronce);
+	// set the texture wrapping parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	// set texture filtering parameters
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	if (data) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+		std::cout << "Failed to load texture" << std::endl;
+	texture.freeImage(bitmap);
+
+	//Papel
+	texture = Texture("../../Textures/papel.jpg");
+	bitmap = texture.loadImage(false);
+	data = texture.convertToData(bitmap, imageWidth, imageHeight);
+	glGenTextures(1, &papel);
+	glBindTexture(GL_TEXTURE_2D, papel);
 	// set the texture wrapping parameters
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -2206,6 +2230,24 @@ void animacionHoja(glm::mat4 view, glm::mat4 projection) {
 	}
 }
 
+void animacionAvion(glm::mat4 view, glm::mat4 projection) {
+	glBindTexture(GL_TEXTURE_2D, papel);
+	avion.setShader(&shaderLighting);
+	avion.setColor(glm::vec3(0.4f, 0.4f, 0.4f));
+	avion.setProjectionMatrix(projection);
+	avion.setViewMatrix(view);
+	avion.setScale(glm::vec3(0.002f, 0.002f, 0.002f));
+
+	avion.setOrientation(glm::vec3(0.0, -90 + ang, 0.0));
+	avion.setPosition(glm::vec3(13 + avionX, 10.5, -21 + avionZ));
+	avion.render();
+
+	avionX = 2.0 * glm::sin(glm::radians(ang));
+	avionZ = 2.0 * glm::cos(glm::radians(ang));
+
+	ang += 0.2f;
+}
+
 void applicationLoop() {
 	bool psi = true;
 	double lastTime = TimeManager::Instance().GetTime();
@@ -2275,7 +2317,7 @@ void applicationLoop() {
 		shaderLighting.turnOn();
 		glUniform3fv(shaderLighting.getUniformLocation("viewPos"), 1, glm::value_ptr(camera->getPosition()));
 		//Directional light
-		glUniform3f(shaderLighting.getUniformLocation("directionalLight.light.ambient"), 0.025, 0.025, 0.025);
+		glUniform3f(shaderLighting.getUniformLocation("directionalLight.light.ambient"), 0.25, 0.25, 0.25);
 		glUniform3f(shaderLighting.getUniformLocation("directionalLight.light.diffuse"), 0.1, 0.1, 0.1);
 		glUniform3f(shaderLighting.getUniformLocation("directionalLight.light.specular"), 0.15, 0.15, 0.15);
 		glUniform3fv(shaderLighting.getUniformLocation("directionalLight.direction"), 1, glm::value_ptr(glm::vec3(0, -1.0, 0.0)));
@@ -2482,6 +2524,7 @@ void applicationLoop() {
 		renderizarExterior(view, projection);
 		animacionPuerta(view, projection);
 		animacionHoja(view, projection);
+		animacionAvion(view, projection);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureWaterID);
