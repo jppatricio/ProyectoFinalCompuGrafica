@@ -38,6 +38,10 @@ Cylinder cylinderAnimacion(20, 20, 0.5, 0.5);
 Cylinder cylinderAnimacion2(20, 20, 0.5, 0.5);
 Box box;
 
+Sphere sphere(20, 20);
+Cylinder cylinder(20, 20, 0.5, 0.5);
+Cylinder cylinder2(12, 12, 0.6, 0.45);
+
 Shader shaderColor;
 Shader shaderTexture;
 Shader shaderCubeTexture;
@@ -57,6 +61,8 @@ GLuint textureID1, textureID2, textureID3, textureCespedID, textureWaterID, text
 GLuint cubeTextureID;
 
 float rot1 = 0.0f, rot2 = 0.0, rot3 = 0.0, rot4 = 0.0, rot5 = 0.0;
+float armAx1 = -0.3f;
+float armAx2 = +0.3f;
 bool saveFrame = false, availableSave = true;
 
 GLenum types[6] = {
@@ -182,6 +188,18 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	cylinderAnimacion2.setShader(&shaderLighting);
 	cylinderAnimacion2.setColor(glm::vec3(0.2, 0.7, 0.3));
 
+	sphere.init();
+	sphere.setShader(&shaderLighting);
+	sphere.setColor(glm::vec3(0.3, 0.3, 1.0));
+
+	cylinder.init();
+	cylinder.setShader(&shaderLighting);
+	cylinder.setColor(glm::vec3(0.8, 0.3, 1.0));
+
+	cylinder2.init();
+	cylinder2.setShader(&shaderLighting);
+	cylinder2.setColor(glm::vec3(0.2, 0.7, 0.3));
+
 	modelRock.loadModel("../../models/rock/rock.obj");
 	modelRail.loadModel("../../models/railroad/railroad_track.obj");
 	modelAirCraft.loadModel("../../models/Aircraft_obj/E 45 Aircraft_obj.obj");
@@ -209,45 +227,9 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 		std::cout << "Failed to load texture" << std::endl;
 	texture.freeImage(bitmap);
 
-	// Texture Goku
-	texture = Texture("../../Textures/goku.png");
-	bitmap = texture.loadImage(false);
-	data = texture.convertToData(bitmap, imageWidth, imageHeight);
-	glGenTextures(1, &textureID2);
-	glBindTexture(GL_TEXTURE_2D, textureID2);
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-		std::cout << "Failed to load texture" << std::endl;
-	texture.freeImage(bitmap);
+	
 
-	// Textura cuadritos
-	texture = Texture("../../Textures/test.png");
-	bitmap = texture.loadImage(false);
-	data = texture.convertToData(bitmap, imageWidth, imageHeight);
-	glGenTextures(1, &textureID3);
-	glBindTexture(GL_TEXTURE_2D, textureID3);
-	// set the texture wrapping parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// set texture wrapping to GL_REPEAT (default wrapping method)
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	// set texture filtering parameters
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imageWidth, imageHeight, 0, GL_BGRA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-		std::cout << "Failed to load texture" << std::endl;
-	texture.freeImage(bitmap);
+	
 
 	texture = Texture("../../Textures/cesped.jpg");
 	bitmap = texture.loadImage(false);
@@ -426,10 +408,16 @@ bool processInput(bool continueApplication) {
 		else
 			rot4 += 0.005f;
 	if (glfwGetKey(window, GLFW_KEY_5) == GLFW_PRESS)
-		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
+		if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) {
 			rot5 -= 0.005f;
-		else
+			armAx1 += 0.0005f;
+			armAx2 += 0.0005f;
+		}
+		else {
 			rot5 += 0.005f;
+			armAx1 -= 0.0005f;
+			armAx2 -= 0.0005f;
+		}
 	if (availableSave && glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS) {
 		saveFrame = true;
 		availableSave = false;
@@ -452,9 +440,13 @@ void applicationLoop() {
 	float rotationAirCraft = 0.0;
 	bool finishRotation = true;
 	std::stringstream ss;
+	std::stringstream ss2;
 
 	std::ofstream myfile;
 	myfile.open("../../animaciones/animationMano.txt"); // FILE A DONDE SE VA A ESCRIBIR
+
+	std::ofstream myFileKeyframe;
+	myFileKeyframe.open("../../animaciones/keyframeAnim.txt"); // FILE A DONDE SE VA A ESCRIBIR
 
 	while (psi) {
 		psi = processInput(true);
@@ -469,6 +461,7 @@ void applicationLoop() {
 		glm::mat4 view = camera->getViewMatrix();
 
 		ss.str("");
+		ss2.str("");
 
 		shaderLighting.turnOn();
 		glUniform3fv(shaderLighting.getUniformLocation("viewPos"), 1, glm::value_ptr(camera->getPosition()));
@@ -572,11 +565,232 @@ void applicationLoop() {
 
 		if (saveFrame) {
 			myfile << ss.str() << "|" << std::endl; // se concatenan
+		}
+
+		//::::::::::::::::::::::::::::::::: ANIMACION POR KEYFRAMES
+		//----
+		glm::mat4 matrix0 = glm::mat4(1.0f);
+		matrix0 = glm::translate(matrix0, glm::vec3(0.0f, 0.0f, -1.0f));
+
+		glm::mat4 matrixs1 = glm::translate(matrix0, glm::vec3(0.0f, -0.5f, 0.0f));
+
+		glm::mat4 matrixs2 = glm::translate(matrixs1, glm::vec3(-0.225f, 0.0f, 0.0f));
+
+		glm::mat4 matrix1 = glm::rotate(matrixs2, -0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix1 = glm::rotate(matrixs2, -1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix1 = glm::translate(matrix1, glm::vec3(0.0, -0.4, 0.0));
+
+		glm::mat4 matrixs4 = glm::translate(matrix1, glm::vec3(0.0f, -0.4f, 0.0f));
+
+		glm::mat4 matrix2 = glm::rotate(matrixs4, 0.3f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix2 = glm::rotate(matrixs4, 1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix2 = glm::translate(matrix2, glm::vec3(0.0f, -0.3f, 0.0f));
+
+		glm::mat4 matrixs12 = glm::translate(matrix2, glm::vec3(0.0f, -0.3f, 0.0f));
+
+		glm::mat4 matrix7 = glm::rotate(matrixs12, 1.5f, glm::vec3(-1.0f, 0.0f, 0.0f));
+		matrix7 = glm::translate(matrix7, glm::vec3(0.0f, -0.1f, 0.0f));
+		matrix7 = glm::scale(matrix7, glm::vec3(0.1f, 0.2f, 0.1f));
+
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix7);
+		//---
+		matrixs12 = glm::scale(matrixs12, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs12);
+
+		matrix2 = glm::scale(matrix2, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix2);
+		matrixs4 = glm::scale(matrixs4, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs4);
+		matrix1 = glm::scale(matrix1, glm::vec3(0.15f, 0.8f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix1);
+		matrixs2 = glm::scale(matrixs2, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs2);
+
+		glm::mat4 matrixs3 = glm::translate(matrixs1, glm::vec3(0.225f, 0.0f, 0.0f));
+		//pierna izquierda
+		glm::mat4 matrix8 = glm::rotate(matrixs3, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix8 = glm::rotate(matrix8, -1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix8 = glm::translate(matrix8, glm::vec3(0.0, -0.4, 0.0));
+
+		glm::mat4 matrixs13 = glm::translate(matrix8, glm::vec3(0.0f, -0.4f, 0.0f));
+
+		glm::mat4 matrix9 = glm::rotate(matrixs13, 0.3f, glm::vec3(0.0f, 0.0f, -1.0f));
+		matrix9 = glm::rotate(matrixs13, 1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix9 = glm::translate(matrix9, glm::vec3(0.0f, -0.3f, 0.0f));
+
+		//pie
+		glm::mat4 matrixs14 = glm::translate(matrix9, glm::vec3(0.0f, -0.3f, 0.0f));
+		glm::mat4 matrix10 = glm::rotate(matrixs14, 1.5f, glm::vec3(-1.0f, 0.0f, 0.0f));
+		matrix10 = glm::translate(matrix10, glm::vec3(0.0f, -0.1f, 0.0f));
+		matrix10 = glm::scale(matrix10, glm::vec3(0.1f, 0.2f, 0.1f));
+
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix10);
+		matrixs14 = glm::scale(matrixs14, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs14);
+		matrix9 = glm::scale(matrix9, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix9);
+		matrixs13 = glm::scale(matrixs13, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs13);
+		matrix8 = glm::scale(matrix8, glm::vec3(0.15f, 0.8f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix8);
+		matrixs3 = glm::scale(matrixs3, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs3);
+		matrixs1 = glm::scale(matrixs1, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs1);
+
+		glm::mat4 matrixs5 = glm::translate(matrix0, glm::vec3(0.0f, 0.5f, 0.0f));
+		//CABEZA
+		glm::mat4 matrix11 = glm::mat4(1.0f);
+		matrix11 = glm::translate(matrixs5, glm::vec3(0.0f, 0.5f, 0.0f));
+		matrix11 = glm::scale(matrix11, glm::vec3(0.4f, 0.6f, 0.4f));
+		cylinder2.setProjectionMatrix(projection);
+		cylinder2.setViewMatrix(view);
+		cylinder2.enableWireMode();
+		cylinder2.render(matrix11);
+
+		//		BRAZO DERECHO
+		glm::mat4 matrixs6 = glm::translate(matrixs5, glm::vec3(0.3f, 0.0f, 0.0f));
+		glm::mat4 matrix3 = glm::rotate(matrixs6, -0.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix3 = glm::rotate(matrix3, -1.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+		matrix3 = glm::rotate(matrix3, armAx1, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix3 = glm::translate(matrix3, glm::vec3(0.25f, 0.0f, 0.0f));
+
+		if (saveFrame)
+			ss2 << matToString(matrix3) << "|";// SE CONTATENA EN PIPES LAS MATRICES DE ROTACION (igual pa todas)
+
+		glm::mat4 matrixs8 = glm::translate(matrix3, glm::vec3(0.3f, 0.0f, 0.0f));
+		glm::mat4 matrix5 = glm::rotate(matrixs8, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix5 = glm::rotate(matrix5, 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix5 = glm::rotate(matrix5, 1.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix5 = glm::translate(matrix5, glm::vec3(0.0f, -0.3f, 0.0f));
+		glm::mat4 matrixs9 = glm::translate(matrix5, glm::vec3(0.0f, -0.3f, 0.0f));
+		matrixs9 = glm::scale(matrixs9, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs9);
+		matrix5 = glm::scale(matrix5, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix5);
+		matrixs8 = glm::scale(matrixs8, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs8);
+		matrix3 = glm::scale(matrix3, glm::vec3(0.5f, 0.15f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix3);
+		matrixs6 = glm::scale(matrixs6, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs6);
+
+		//		BRAZO IZQUIERDO
+		glm::mat4 matrixs7 = glm::translate(matrixs5, glm::vec3(-0.3f, 0.0f, 0.0f));
+		glm::mat4 matrix4 = glm::rotate(matrixs7, 0.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix4 = glm::rotate(matrix4, 1.5f, glm::vec3(0.0f, 1.0f, 0.0f));
+		matrix4 = glm::rotate(matrix4, armAx2, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix4 = glm::translate(matrix4, glm::vec3(-0.25f, 0.0f, 0.0f));
+
+		if (saveFrame)
+			ss2 << matToString(matrix4) << "|";// SE CONTATENA EN PIPES LAS MATRICES DE ROTACION (igual pa todas)
+		glm::mat4 matrixs10 = glm::translate(matrix4, glm::vec3(-0.3f, 0.0f, 0.0f));
+		glm::mat4 matrix6 = glm::rotate(matrixs10, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f));
+		matrix6 = glm::rotate(matrix6, -0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix6 = glm::rotate(matrix6, -1.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix6 = glm::translate(matrix6, glm::vec3(0.0f, -0.3f, 0.0f));
+		glm::mat4 matrixs11 = glm::translate(matrix6, glm::vec3(0.0f, -0.3f, 0.0f));
+		matrixs11 = glm::scale(matrixs11, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs11);
+		matrix6 = glm::scale(matrix6, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix6);
+		matrixs10 = glm::scale(matrixs10, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs10);
+		matrix4 = glm::scale(matrix4, glm::vec3(0.5f, 0.15f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix4);
+		matrixs7 = glm::scale(matrixs7, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs7);
+
+		matrixs5 = glm::scale(matrixs5, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.enableWireMode();
+		sphere.render(matrixs5);
+
+		matrix0 = glm::scale(matrix0, glm::vec3(0.6f, 1.0f, 0.6f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.enableWireMode();
+		cylinder.render(matrix0);
+		//----
+		if (saveFrame) {
+			myFileKeyframe << ss2.str() << "|" << std::endl; // se concatenan
 			saveFrame = false;
 		}
+		//:::::::::::::::::::::::::::::::::
 
 		glfwSwapBuffers(window);
 	}
+	myFileKeyframe.close();
 	myfile.close();// se cierra el archivo
 }
 

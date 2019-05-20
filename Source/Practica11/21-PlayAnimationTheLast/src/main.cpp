@@ -45,6 +45,7 @@ Box leaveBox;
 Sphere sphereAnimacion(20, 20);
 Cylinder cylinderAnimacion(20, 20, 0.5, 0.5);
 Cylinder cylinderAnimacion2(20, 20, 0.5, 0.5);
+Cylinder cylinder2(12, 12, 0.6, 0.45);
 
 Shader shaderColor;
 Shader shaderTexture;
@@ -67,10 +68,25 @@ Model tree;
 Model leaves;
 Model busto;
 Model pedestal;
+void animacionProgramador(glm::mat4 view, glm::mat4 projection);
 
 GLuint textureID1, textureCespedID, textureWaterID, pared_q, puerta_principal, ventana1, ventana2,
  ventana3, piedra, ventanaLab, windowsImg, keyboard, pizarron, tronco, hojas, bronce, ventana4;
 GLuint cubeTextureID;
+
+float interpolation = 0.0;
+
+//::::::::::::::::::::::::::::::::::::::::::A
+//OBTENCION DE LOS KEYFRAMES DEL ARCHIVO---------
+std::vector<std::vector<glm::mat4>> keyFramesProg;
+//NUMERO DE PASOS ENTRE KEYFRAMES (I a I+1)
+int numPasosAnimProg = 20;
+int numPasosAnimProgCurr = 0;
+
+// Indices del arreglo keyFramesBrazo el actual y el siguiente
+int indexKeyFrameProgCurr = 0;
+int indexKeyFrameProgNext = 1;
+//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
 std::vector<std::vector<glm::mat4>> getKeyFrames(std::string fileName) {
 	std::vector<std::vector<glm::mat4>> keyFrames;
@@ -242,6 +258,18 @@ void init(int width, int height, std::string strTitle, bool bFullScreen) {
 	cylinderAnimacion2.init();
 	cylinderAnimacion2.setShader(&shaderLighting);
 	cylinderAnimacion2.setColor(glm::vec3(0.2, 0.7, 0.3));
+
+	sphere.init();
+	sphere.setShader(&shaderLighting);
+	sphere.setColor(glm::vec3(0.3, 0.3, 1.0));
+
+	cylinder.init();
+	cylinder.setShader(&shaderLighting);
+	cylinder.setColor(glm::vec3(0.8, 0.3, 1.0));
+
+	cylinder2.init();
+	cylinder2.setShader(&shaderLighting);
+	cylinder2.setColor(glm::vec3(0.2, 0.7, 0.3));
 
 	sphere.init();
 	cylinder.init();
@@ -2201,6 +2229,11 @@ void applicationLoop() {
 	int indexKeyFrameBrazoNext = 1;
 	float interpolation = 0.0;
 
+	//OBTENCION DE LOS KEYFRAMES DEL ARCHIVO2---------
+	keyFramesProg = getKeyFrames("../../animaciones/keyframeAnim.txt");
+	//::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+
 	while (psi) {
 		psi = processInput(true);
 
@@ -2294,7 +2327,7 @@ void applicationLoop() {
 		glm::vec4 transformComp1;
 		glm::vec4 transformComp2;
 		glm::vec4 finalTrans;
-
+		animacionProgramador(view, projection);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, pared_q);//          v----Numero de articulaciones + 1
 		if (keyFramesBrazo[indexKeyFrameBrazoCurr].size() == 7 && keyFramesBrazo[indexKeyFrameBrazoNext].size() == 7) {
@@ -2525,6 +2558,274 @@ void applicationLoop() {
 		}
 
 		glfwSwapBuffers(window);
+	}
+}
+
+
+void animacionProgramador(glm::mat4 view, glm::mat4 projection) {
+	glm::quat firstQuat;
+	glm::quat secondQuat;
+	glm::quat finalQuat;
+	glm::mat4 interpoltaedMatrix;
+	glm::vec4 transformComp1;
+	glm::vec4 transformComp2;
+	glm::vec4 finalTrans;
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, pared_q);//          v----Numero de articulaciones + 1
+	if (keyFramesProg[indexKeyFrameProgCurr].size() == 3 && keyFramesProg[indexKeyFrameProgNext].size() == 3) {
+		//::::::::::::::::::::::::::::::::: ANIMACION POR KEYFRAMES
+			//----
+		glm::mat4 matrix0 = glm::mat4(1.0f);
+		matrix0 = glm::translate(matrix0, glm::vec3(10.7f, 9.75f, -22.85f));
+		matrix0 = glm::rotate(matrix0, 3.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		matrix0 = glm::scale(matrix0, glm::vec3(.5f, .5f, .5f));
+
+
+		glm::mat4 matrixs1 = glm::translate(matrix0, glm::vec3(0.0f, -0.5f, 0.0f));
+
+		glm::mat4 matrixs2 = glm::translate(matrixs1, glm::vec3(-0.225f, 0.0f, 0.0f));
+
+		glm::mat4 matrix1 = glm::rotate(matrixs2, -0.2f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix1 = glm::rotate(matrixs2, -1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix1 = glm::translate(matrix1, glm::vec3(0.0, -0.4, 0.0));
+
+		glm::mat4 matrixs4 = glm::translate(matrix1, glm::vec3(0.0f, -0.4f, 0.0f));
+
+		glm::mat4 matrix2 = glm::rotate(matrixs4, 0.3f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix2 = glm::rotate(matrixs4, 1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix2 = glm::translate(matrix2, glm::vec3(0.0f, -0.3f, 0.0f));
+
+		glm::mat4 matrixs12 = glm::translate(matrix2, glm::vec3(0.0f, -0.3f, 0.0f));
+
+		glm::mat4 matrix7 = glm::rotate(matrixs12, 1.5f, glm::vec3(-1.0f, 0.0f, 0.0f));
+		matrix7 = glm::translate(matrix7, glm::vec3(0.0f, -0.1f, 0.0f));
+		matrix7 = glm::scale(matrix7, glm::vec3(0.1f, 0.2f, 0.1f));
+
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix7);
+		//---
+		matrixs12 = glm::scale(matrixs12, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs12);
+
+		matrix2 = glm::scale(matrix2, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix2);
+		matrixs4 = glm::scale(matrixs4, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs4);
+		matrix1 = glm::scale(matrix1, glm::vec3(0.15f, 0.8f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix1);
+		matrixs2 = glm::scale(matrixs2, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs2);
+
+		glm::mat4 matrixs3 = glm::translate(matrixs1, glm::vec3(0.225f, 0.0f, 0.0f));
+		//pierna izquierda
+		glm::mat4 matrix8 = glm::rotate(matrixs3, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix8 = glm::rotate(matrix8, -1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix8 = glm::translate(matrix8, glm::vec3(0.0, -0.4, 0.0));
+
+		glm::mat4 matrixs13 = glm::translate(matrix8, glm::vec3(0.0f, -0.4f, 0.0f));
+
+		glm::mat4 matrix9 = glm::rotate(matrixs13, 0.3f, glm::vec3(0.0f, 0.0f, -1.0f));
+		matrix9 = glm::rotate(matrixs13, 1.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix9 = glm::translate(matrix9, glm::vec3(0.0f, -0.3f, 0.0f));
+
+		//pie
+		glm::mat4 matrixs14 = glm::translate(matrix9, glm::vec3(0.0f, -0.3f, 0.0f));
+		glm::mat4 matrix10 = glm::rotate(matrixs14, 1.5f, glm::vec3(-1.0f, 0.0f, 0.0f));
+		matrix10 = glm::translate(matrix10, glm::vec3(0.0f, -0.1f, 0.0f));
+		matrix10 = glm::scale(matrix10, glm::vec3(0.1f, 0.2f, 0.1f));
+
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix10);
+		matrixs14 = glm::scale(matrixs14, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs14);
+		matrix9 = glm::scale(matrix9, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix9);
+		matrixs13 = glm::scale(matrixs13, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs13);
+		matrix8 = glm::scale(matrix8, glm::vec3(0.15f, 0.8f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix8);
+		matrixs3 = glm::scale(matrixs3, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs3);
+		matrixs1 = glm::scale(matrixs1, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs1);
+
+		glm::mat4 matrixs5 = glm::translate(matrix0, glm::vec3(0.0f, 0.5f, 0.0f));
+		//CABEZA
+		glm::mat4 matrix11 = glm::mat4(1.0f);
+		matrix11 = glm::translate(matrixs5, glm::vec3(0.0f, 0.5f, 0.0f));
+		matrix11 = glm::scale(matrix11, glm::vec3(0.4f, 0.6f, 0.4f));
+		cylinder2.setProjectionMatrix(projection);
+		cylinder2.setViewMatrix(view);
+		cylinder2.render(matrix11);
+
+		//		BRAZO DERECHO
+		//primera transf
+		//Matriz de rotaci�n actual
+		firstQuat = glm::quat_cast(keyFramesProg[indexKeyFrameProgCurr][0]);
+		secondQuat = glm::quat_cast(keyFramesProg[indexKeyFrameProgNext][0]);
+		//Slerp hace la interpolacion del quaternion
+		finalQuat = glm::slerp(firstQuat, secondQuat, interpolation);
+		//Se convierte el quaternion a una matriz de 4x4
+		interpoltaedMatrix = glm::mat4_cast(finalQuat);
+		//Se obtiene la traslaci�n en la matriz del frame i
+		transformComp1 = keyFramesProg[indexKeyFrameProgCurr][0] * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		//Se obtiene la traslaci�n en la matriz del frame i + 1
+		transformComp2 = keyFramesProg[indexKeyFrameProgNext][0] * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		finalTrans = (float)(1.0 - interpolation) * transformComp1 + transformComp2 * interpolation;
+		interpoltaedMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(finalTrans)) * interpoltaedMatrix;
+
+		// Animacion KeyFrames
+		glm::mat4 matrixGlobalAnimation = glm::translate(glm::mat4(1.0f), glm::vec3(10.75f, 9.75f, -23.3f));
+		matrixGlobalAnimation = glm::rotate(matrixGlobalAnimation, 3.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		matrixGlobalAnimation = glm::scale(matrixGlobalAnimation, glm::vec3(0.5f, 0.5f, 0.5f));
+
+		glm::mat4 keyFrameJoint = matrixGlobalAnimation * interpoltaedMatrix;
+
+		glm::mat4 matrixs6 = glm::translate(matrixs5, glm::vec3(0.3f, 0.0f, 0.0f));
+		//copia
+		/*	*/ glm::mat4 matrix3 = glm::rotate(keyFrameJoint, .2f, glm::vec3(1.0, 0.0f, 0.0));
+
+		glm::mat4 matrixs8 = glm::translate(matrix3, glm::vec3(0.3f, 0.0f, 0.0f));
+		glm::mat4 matrix5 = glm::rotate(matrixs8, 0.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix5 = glm::rotate(matrix5, 0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix5 = glm::rotate(matrix5, 1.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix5 = glm::translate(matrix5, glm::vec3(0.0f, -0.3f, 0.0f));
+		glm::mat4 matrixs9 = glm::translate(matrix5, glm::vec3(0.0f, -0.3f, 0.0f));
+		matrixs9 = glm::scale(matrixs9, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs9);
+		matrix5 = glm::scale(matrix5, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix5);
+		matrixs8 = glm::scale(matrixs8, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs8);
+		matrix3 = glm::scale(matrix3, glm::vec3(0.5f, 0.15f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix3);
+		matrixs6 = glm::scale(matrixs6, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs6);
+
+
+
+		glm::mat4 matrixs7 = glm::translate(matrixs5, glm::vec3(-0.3f, 0.0f, 0.0f));
+
+		//segunda transf
+		//Matriz de rotaci�n actual
+		firstQuat = glm::quat_cast(keyFramesProg[indexKeyFrameProgCurr][1]);
+		secondQuat = glm::quat_cast(keyFramesProg[indexKeyFrameProgNext][1]);
+		//Slerp hace la interpolacion del quaternion
+		finalQuat = glm::slerp(firstQuat, secondQuat, interpolation);
+		//Se convierte el quaternion a una matriz de 4x4
+		interpoltaedMatrix = glm::mat4_cast(finalQuat);
+		//Se obtiene la traslaci�n en la matriz del frame i
+		transformComp1 = keyFramesProg[indexKeyFrameProgCurr][1] * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+		//Se obtiene la traslaci�n en la matriz del frame i + 1
+		transformComp2 = keyFramesProg[indexKeyFrameProgNext][1] * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
+
+		//Se obtiene la interpolacion entre el frame i con el  frame i + 1
+		//transformComp1 es el frame i
+		//transformComp2 es el frame i + 1
+		finalTrans = (float)(1.0 - interpolation) * transformComp1 + transformComp2 * interpolation;
+
+		//Unimos la matriz de interpolaci�n con la de traslacion
+		interpoltaedMatrix = glm::translate(glm::mat4(1.0f), glm::vec3(finalTrans)) * interpoltaedMatrix;
+
+		// Animacion KeyFrames
+		matrixGlobalAnimation = glm::translate(glm::mat4(1.0f), glm::vec3(10.75f, 9.75f, -23.2f));
+		matrixGlobalAnimation = glm::rotate(matrixGlobalAnimation, 3.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		matrixGlobalAnimation = glm::scale(matrixGlobalAnimation, glm::vec3(0.5f, 0.5f, 0.5f));
+		// Se modela siempre con los ejes de giro en el eje z
+		// Articulacion 2
+		keyFrameJoint = matrixGlobalAnimation * interpoltaedMatrix;
+
+		//copia
+		/*	*/ glm::mat4 matrix4 = glm::rotate(keyFrameJoint, .2f, glm::vec3(1.0, 0.0f, 0.0));
+		matrix4 = glm::translate(matrix4, glm::vec3(-0.25f, 0.0f, 0.0f));
+
+		glm::mat4 matrixs10 = glm::translate(matrix4, glm::vec3(-0.3f, 0.0f, 0.0f));
+		glm::mat4 matrix6 = glm::rotate(matrixs10, 0.0f, glm::vec3(0.0f, 0.0f, -1.0f));
+		matrix6 = glm::rotate(matrix6, -0.5f, glm::vec3(1.0f, 0.0f, 0.0f));
+		matrix6 = glm::rotate(matrix6, -1.5f, glm::vec3(0.0f, 0.0f, 1.0f));
+		matrix6 = glm::translate(matrix6, glm::vec3(0.0f, -0.3f, 0.0f));
+		glm::mat4 matrixs11 = glm::translate(matrix6, glm::vec3(0.0f, -0.3f, 0.0f));
+		matrixs11 = glm::scale(matrixs11, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs11);
+		matrix6 = glm::scale(matrix6, glm::vec3(0.1, 0.6, 0.2));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix6);
+		matrixs10 = glm::scale(matrixs10, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs10);
+		matrix4 = glm::scale(matrix4, glm::vec3(0.5f, 0.15f, 0.15f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix4);
+		matrixs7 = glm::scale(matrixs7, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs7);
+
+		matrixs5 = glm::scale(matrixs5, glm::vec3(0.1f, 0.1f, 0.1f));
+		sphere.setProjectionMatrix(projection);
+		sphere.setViewMatrix(view);
+		sphere.render(matrixs5);
+
+		matrix0 = glm::scale(matrix0, glm::vec3(0.6f, 1.0f, 0.6f));
+		cylinder.setProjectionMatrix(projection);
+		cylinder.setViewMatrix(view);
+		cylinder.render(matrix0);
+	}
+
+	numPasosAnimProgCurr++;
+	interpolation = numPasosAnimProgCurr / (float)numPasosAnimProg;
+
+	if (interpolation >= 1.0) {
+		interpolation = 0;
+		numPasosAnimProgCurr = 0;
+		indexKeyFrameProgCurr = indexKeyFrameProgNext;
+		indexKeyFrameProgNext++;
+	}
+
+	if (indexKeyFrameProgNext > keyFramesProg.size() - 1) {
+		interpolation = 0;
+		indexKeyFrameProgCurr = 0;
+		indexKeyFrameProgNext = 1;
 	}
 }
 
