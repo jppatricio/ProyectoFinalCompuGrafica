@@ -152,6 +152,10 @@ int lastMousePosY, offsetY;
 
 double deltaTime;
 
+bool actionAnim = false, animFinished = true, cerrada = true;
+float zDoorSlide = -17.66;
+
+
 // Se definen todos las funciones.
 void reshapeCallback(GLFWwindow* Window, int widthRes, int heightRes);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mode);
@@ -663,6 +667,12 @@ bool processInput(bool continueApplication) {
 		camera->moveRightCamera(false, deltaTime);
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
 		camera->moveRightCamera(true, deltaTime);
+	//Tecla F para ir al frente
+	if (glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS)
+	{
+		camera->setPosition(glm::vec3(0.0f, 17.0f, 30.0f));
+		camera->setYawPitch(-89.0f, -25.0f);
+	}	
 	//Tecla G para isometrico
 	if (glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS)
 	{
@@ -673,6 +683,10 @@ bool processInput(bool continueApplication) {
 	if (glfwGetKey(window, GLFW_KEY_H) == GLFW_PRESS) {
 		camera->setPosition(glm::vec3(8.5f, 10.0f, -18.0f));
 		camera->setYawPitch(0.0f, -0.3f);
+	}
+	//Tecla E para interactuar con puerta
+	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+		actionAnim = true;
 	}
 		
 	glfwPollEvents();
@@ -2049,6 +2063,44 @@ void renderizarExterior(glm::mat4 view, glm::mat4 projection) {
 	pedestal.render();
 }
 
+void animacionPuerta(glm::mat4 view, glm::mat4 projection) {
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ventanaLab);
+	windowsBox.setShader(&shaderLighting);
+	windowsBox.setProjectionMatrix(projection);
+	windowsBox.setViewMatrix(view);
+	windowsBox.setPosition(glm::vec3(10, 10, zDoorSlide));
+	windowsBox.setScale(glm::vec3(.1, 2, 1.33));
+	windowsBox.render();
+
+	if (actionAnim) {
+		actionAnim = false;
+		animFinished = false;
+	}
+	if (!animFinished) {
+		if (cerrada) {
+			if (zDoorSlide <= -19) {
+				zDoorSlide = -19;
+				animFinished = true;
+				cerrada = false;
+			}
+			else {
+				zDoorSlide -= 0.05;
+			}
+		}
+		else {
+			if (zDoorSlide >= -17.66) {
+				zDoorSlide = -17.66;
+				animFinished = true;
+				cerrada = true;
+			}
+			else {
+				zDoorSlide += 0.05;
+			}
+		}
+	}
+}
+
 void applicationLoop() {
 	bool psi = true;
 	double lastTime = TimeManager::Instance().GetTime();
@@ -2318,6 +2370,7 @@ void applicationLoop() {
 		renderizarEdificio(view, projection);
 		renderizarSalon(view, projection);
 		renderizarExterior(view, projection);
+		animacionPuerta(view, projection);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, textureWaterID);
